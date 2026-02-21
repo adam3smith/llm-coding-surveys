@@ -5,14 +5,14 @@ theme: jekyll-theme-dinky
 remote_theme: pages-themes/dinky@v0.2.0
 
 # Site settings
-url: "https://yourusername.github.io"
-baseurl: "/llm-survey-coding-workshop"
-repository: "yourusername/llm-survey-coding-workshop"
+url: "https://adam3smith.github.io"
+baseurl: "/llm-coding-surveys"
+repository: "adam3smith/llm-coding-surveys"
 
 # Author
 author:
-  name: "Your Name"
-  email: "your.email@institution.edu"
+  name: "Sebastian Karcher"
+  email: "skarcher@syr.edu"
 
 # Build settings
 markdown: kramdown
@@ -76,9 +76,3 @@ keywords:
   - "R programming"
   - "computational social science"
 
-# Google Analytics (optional)
-# google_analytics: UA-XXXXXXXX-X
-
-# Social links (optional)
-github_username: yourusername
-twitter_username: yourusername
