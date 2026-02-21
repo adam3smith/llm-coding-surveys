@@ -1,0 +1,84 @@
+# Jekyll configuration for LLM Survey Coding Workshop
+title: "LLM Survey Coding Workshop"
+description: "A hands-on workshop for using Claude API to code open-ended survey responses"
+theme: jekyll-theme-dinky
+remote_theme: pages-themes/dinky@v0.2.0
+
+# Site settings
+url: "https://yourusername.github.io"
+baseurl: "/llm-survey-coding-workshop"
+repository: "yourusername/llm-survey-coding-workshop"
+
+# Author
+author:
+  name: "Your Name"
+  email: "your.email@institution.edu"
+
+# Build settings
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Plugins
+plugins:
+  - jekyll-remote-theme
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Collections
+collections:
+  pages:
+    output: true
+    permalink: /:name
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
+
+# Navigation order (Dinky uses alphabetical by default)
+# These will appear in the sidebar in this order:
+navigation:
+  - index.md
+  - setup.md
+  - motivation.md
+  - first-call.md
+  - codebook.md
+  - batching.md
+  - production.md
+  - validation.md
+  - next-steps.md
+  - troubleshooting.md
+  - resources.md
+
+# Exclude from build
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - .git
+  - .gitignore
+
+# SEO
+lang: en-US
+tagline: "Using Claude API for systematic text analysis"
+keywords: 
+  - "LLM"
+  - "survey coding"
+  - "Claude"
+  - "text analysis"
+  - "R programming"
+  - "computational social science"
+
+# Google Analytics (optional)
+# google_analytics: UA-XXXXXXXX-X
+
+# Social links (optional)
+github_username: yourusername
+twitter_username: yourusername
