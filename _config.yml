@@ -26,25 +26,13 @@ plugins:
   - jekyll-seo-tag
   - jekyll-sitemap
 
-# Collections
-collections:
-  pages:
-    output: true
-    permalink: /:name
-
-# Defaults
-defaults:
-  - scope:
-      path: ""
-      type: "pages"
-    values:
-      layout: "default"
 
 # Navigation order (Dinky uses alphabetical by default)
 # These will appear in the sidebar in this order:
 navigation:
   - index.md
   - setup.md
+  - the-data.md
   - motivation.md
   - first-call.md
   - codebook.md

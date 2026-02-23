@@ -1,20 +1,15 @@
 ---
 layout: default
-title: "Workshop: LLM-Powered Survey Coding with Claude"
+title: "Workshop: Introduction to Survey Coding with LLMs"
 nav_order: 1
 ---
 
-# LLM-Powered Survey Coding with Claude
+# Introduction to Survey Coding with LLMs
 {: .no_toc }
 
-## A Hands-On Workshop for Social Scientists
+## A  Workshop for Social Scientists
 {: .no_toc }
 
-<div class="code-example" markdown="1">
-**Workshop Duration:** 2.5 hours  
-**Level:** Intermediate R users  
-**Tools:** R, Claude API (Haiku 4.5)
-</div>
 
 ---
 
@@ -28,15 +23,10 @@ nav_order: 1
 
 ## What You'll Build
 
-In this workshop, you'll learn to use Large Language Models (LLMs) to code open-ended survey responses—transforming a task that would take weeks of human effort into a few hours of automated, consistent coding.
+In this workshop, you'll learn to use Large Language Models (LLMs) to code open-ended survey.
 
-**Real-world example:** We'll work with 1,944 survey responses about racial attitudes, using Claude to apply a detailed 9-variable codebook. By the end, you'll have a production-ready system that:
+**Real-world example:** We'll work with survey responses about racial attitudes from an article published in 2018 in the _Journal of Politics_, using Claude to apply a detailed 9-variable codebook. 
 
-- ✅ Codes survey responses consistently (temperature=0)
-- ✅ Matches human inter-rater reliability (~90-95%)
-- ✅ Handles errors and rate limits gracefully
-- ✅ Saves progress incrementally (resumable if interrupted)
-- ✅ Costs ~$2-3 per 1,000 responses
 
 ## What You'll Learn
 
@@ -49,20 +39,16 @@ In this workshop, you'll learn to use Large Language Models (LLMs) to code open-
 
 ## Prerequisites
 
-### Required Knowledge
-- Intermediate R (tidyverse, functions, basic data manipulation)
-- Familiarity with survey research and coding
-- Basic understanding of APIs (we'll cover the specifics)
-
 ### Required Setup
 - R (version 4.0+) with RStudio
 - R packages: `tidyverse`, `httr2`, `jsonlite`
-- Anthropic API key (free tier includes $5 credit)
-- Sample survey data (provided)
+- Anthropic API key (will be provided)
+- Survey data (provided)
 
 ### Recommended Reading
-- Basic understanding of what LLMs are
-- Familiarity with inter-rater reliability concepts
+- The article we're going to "replicate":
+  Kam, Cindy D., and Camille D. Burge. 2018. "Uncovering Reactions to the Racial Resentment Scale across the Racial Divide." The _Journal of Politics_ 80 (1): 314–20. https://doi.org/10.1086/693907
+- Some background reading on the (technical) history of LLMs -- The "History" section of [the Wikipedia article](https://en.wikipedia.org/wiki/Large_language_model) is as good a start as .
 
 ## Workshop Materials
 
@@ -71,16 +57,7 @@ All materials are available for download:
 - 📊 **Sample data:** 1,944 survey responses on racial attitudes
 - 📋 **Codebook:** 9-variable coding scheme
 - 💻 **Complete R scripts:** From basic to production code
-- 📚 **Slides:** Visual explanations of key concepts
 
-## Cost Expectations
-
-Using Claude Haiku 4.5:
-- **Test run (100 responses):** ~$0.12
-- **Full survey (1,944 responses):** ~$2.50
-- **All 4 questions (~8,000 responses):** ~$10
-
-The $5 free credit covers the entire workshop plus your own experiments!
 
 ## Workshop Schedule
 
@@ -101,25 +78,14 @@ The $5 free credit covers the entire workshop plus your own experiments!
 
 By the end of this workshop, you will be able to:
 
-1. **Evaluate** when LLM-based coding is appropriate for your research
-2. **Design** effective prompts for structured survey coding
-3. **Implement** cost-efficient batch processing with error handling
-4. **Validate** AI codes against human benchmarks
-5. **Adapt** this approach to your own survey data and codebooks
+1. **Understand** how LLMs 'code' textual data.
+2. **Evaluate** when LLM-based coding is appropriate for your research
+3. **Design** effective prompts for structured survey coding
+4. **Implement** cost-efficient batch processing with error handling
+5. **Validate** AI codes against human benchmarks
+6. **Adapt** this approach to your own survey data and codebooks and beyond
 
 ## Getting Started
 
 Ready to begin? Head to [Setup](setup.html) to install the necessary tools and get your API key.
 
----
-
-## About This Workshop
-
-This workshop was developed as a practical guide for social scientists who want to leverage modern AI for survey research. The approach emphasizes:
-
-- **Reproducibility:** Temperature=0 for consistent results
-- **Validation:** Always compare with human coding
-- **Cost-efficiency:** Optimize batch sizes and model choice
-- **Transparency:** Understand what the model is doing
-
-The methods taught here can be adapted to many text classification tasks beyond survey coding.

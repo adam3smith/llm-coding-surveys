@@ -1,0 +1,57 @@
+<style>
+  /* Widen the sidebar */
+  header { width: 210px !important; }
+
+  /* Nav list: reset Dinky's red button styles on li */
+  header nav li {
+    background: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+    line-height: 1.4em !important;
+  }
+
+  header nav li:hover {
+    background: none !important;
+  }
+
+  header nav li a {
+    display: block;
+    padding: 3px 4px 3px 8px !important;
+    color: #aaa;
+    font-size: 0.85em;
+    text-decoration: none;
+    font-weight: normal;
+    text-shadow: none;
+    border-left: 3px solid transparent;
+    height: auto !important;
+    background: none !important;
+  }
+
+  header nav li a:hover {
+    color: #fff;
+    border-left-color: #aaa;
+    text-decoration: none;
+  }
+
+  header nav li a.active {
+    color: #fff;
+    font-weight: bold;
+    border-left-color: #fff;
+  }
+
+  /* Footer moved into sidebar — hide the now-empty footer element */
+  footer { display: none; }
+
+  .sidebar-footer {
+    margin-top: 20px;
+    font-size: 0.75em;
+    color: #777;
+  }
+
+  .sidebar-footer a { color: #999; }
+</style>

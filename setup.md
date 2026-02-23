@@ -14,17 +14,12 @@ nav_order: 2
 **Estimated time:** 15 minutes
 </div>
 
----
 
-## Table of contents
-{: .no_toc .text-delta }
 
-1. TOC
-{:toc}
+## Step 1: Set up an R environment and Install R Packages
 
----
-
-## Step 1: Install R Packages
+I always recommend that you create a new R Project in an empty folder for any R coding. Go to File --> New Project and create a project; you can name it however you want.
+Then open a new, empty R-Scipt (File --> New File --> RScript). This is where you'll build your code gradually.
 
 We'll use three key packages:
 
@@ -43,9 +38,11 @@ library(jsonlite)
 - `httr2`: Modern HTTP client for making API calls
 - `jsonlite`: Parsing JSON responses from the API
 
-## Step 2: Get an Anthropic API Key
+## Step 2: Get an Anthropic API Key and Set it in R
 
 ### Create an Account
+
+**You don't have to do this for the in-person workshop. I'll provide you with an API key**
 
 1. Go to [console.anthropic.com](https://console.anthropic.com)
 2. Sign up with your email or Google account
@@ -80,6 +77,8 @@ ANTHROPIC_API_KEY=sk-ant-api-your-key-here
 
 **Option 2: Session Variable (Quick & Temporary)**
 
+_We'll use this option for the workshop_
+
 ```r
 # Set for this session only
 Sys.setenv(ANTHROPIC_API_KEY = "sk-ant-api-your-key-here")
@@ -92,36 +91,12 @@ Sys.setenv(ANTHROPIC_API_KEY = "sk-ant-api-your-key-here")
 Sys.getenv("ANTHROPIC_API_KEY")
 ```
 
-## Step 3: Download Workshop Materials
 
-### Sample Data
+## Step 3: Test Your Setup
 
-Download the survey data: [Kam_Burge.csv](../data/Kam_Burge.csv)
+An API is an "Application Programming Interface" -- it's how you can talk to an application (typically, but not always, on the web) from your own program -- here, our RScript. 
 
-This contains 1,944 survey responses with:
-- **Q43, Q45, Q47, Q49:** Open-ended responses
-- **C1Q1*, C2Q1*:** Human coder 1 & 2 codes (for validation)
-
-```r
-# Create a data directory
-dir.create("data", showWarnings = FALSE)
-
-# Read the data
-survey_data <- read_csv("data/Kam_Burge.csv")
-
-# Quick look
-glimpse(survey_data)
-```
-
-### Codebook
-
-Download: [codebook.pdf](../resources/codebook.pdf)
-
-This 9-variable coding scheme will guide our structured coding.
-
-## Step 4: Test Your Setup
-
-Let's make sure everything works with a simple "Hello World" API call:
+Let's start with a simple "Hello World" API call:
 
 ```r
 # Function to call Claude
@@ -134,7 +109,7 @@ call_claude_simple <- function(prompt, api_key = Sys.getenv("ANTHROPIC_API_KEY")
       `content-type` = "application/json"
     ) |>
     req_body_json(list(
-      model = "claude-haiku-4-5-20251001",
+      model = "claude-haiku-4-5",
       max_tokens = 100,
       messages = list(
         list(
@@ -148,14 +123,30 @@ call_claude_simple <- function(prompt, api_key = Sys.getenv("ANTHROPIC_API_KEY")
   result <- resp_body_string(response) |>
     fromJSON()
   
-  result$content[[1]]$text
+  result
 }
 
 # Test it!
-call_claude_simple("Say 'Setup complete!' in a friendly way.")
+output = call_claude_simple("Say 'Setup complete!' in a friendly way.")
 ```
+Let's first look at the function. A lot of the structure here is provided by R's `httr2` package. It contains 4 parts:
+1. The URL for the API (`https://api.anthropic.com/v1/messages`)
+2. The "Header" -- here's where you tell the API who you are (via the API key) and what type of service you'd like (i.e. a specific version of the API and the format for the response)
+3. The "Body" -- this is where all the substance happens:
+  - You specify the model
+  - The prompt
+  - You specify maximum tokens to use (more on this later)
+  - You can specify other things, some of which we'll touch on.
 
-**Expected output:** Something like `"Setup complete! 🎉 You're ready to go!"`
+
+Let's look at the output:
+![API Output Structure](/images/output_structure.png)
+
+We want the text in the `content` section, so let's try `output$content$text`. You should get something like
+
+> "Setup complete! 🎉 You're all good to go!"
+
+We can now update the last line of the function to directly give us the output, relod the function, and try again.
 
 ## Troubleshooting
 
@@ -180,56 +171,15 @@ call_claude_simple("Say 'Setup complete!' in a friendly way.")
 **Error:** `Failed to connect to api.anthropic.com`
 - **Solution:** Check your internet connection or firewall settings.
 
-### Rate Limit Warning
+### Rate Limit or Server Overloaded Warning
 
-If you see `429` errors during testing:
+If you see `429` or `529` errors during testing:
 - **Don't worry!** We'll handle this properly in later sections.
 - For now, just wait 10 seconds and try again.
 
-## Verify Your Setup
 
-Run this checklist:
-
-```r
-# ✅ Packages loaded
-library(tidyverse)
-library(httr2)
-library(jsonlite)
-
-# ✅ API key set
-stopifnot(Sys.getenv("ANTHROPIC_API_KEY") != "")
-
-# ✅ Data loaded
-survey_data <- read_csv("data/Kam_Burge.csv")
-stopifnot(nrow(survey_data) == 1944)
-
-# ✅ API call works
-test_response <- call_claude_simple("Say hello!")
-print(test_response)
-
-cat("✅ All checks passed! You're ready to start.\n")
-```
 
 ## What's Next?
 
-Now that your environment is ready, let's understand [**why we're using LLMs**](motivation.html) for survey coding and how they differ from traditional approaches.
+Now that your environment is ready, let's [**meet the data**](the-data.html) we'll be working with.
 
----
-
-## Quick Reference
-
-**Key Files:**
-- `data/Kam_Burge.csv` - Survey responses
-- `codebook.pdf` - Coding scheme
-
-**Essential Commands:**
-```r
-# Load packages
-library(tidyverse); library(httr2); library(jsonlite)
-
-# Check API key
-Sys.getenv("ANTHROPIC_API_KEY")
-
-# Load data
-survey_data <- read_csv("data/Kam_Burge.csv")
-```
