@@ -1,7 +1,7 @@
 ---
 layout: default
-title: "Building a Production System"
-nav_order: 7
+title: "Building a robust system"
+nav_order: 8
 ---
 
 # Building a Production System
@@ -16,26 +16,18 @@ nav_order: 7
 
 ---
 
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
-
----
-
 ## What Could Go Wrong?
 
 You're 30 minutes into coding 1,944 responses when:
 
-- 💥 Your internet drops
-- 🔌 Your laptop battery dies
-- 🚫 You hit an unexpected API error
-- ⚠️ Rate limits kick in and exhaust retries
+- Your internet drops
+- Your laptop battery dies
+- You hit an unexpected API error
+- Rate limits kick in and exhaust retries
 
 **Problem:** You lose all progress and have to start over.
 
-**Solution:** Save progress incrementally!
+**Solution:** Save progress incrementally
 
 ## Progress Saving Architecture
 
@@ -78,7 +70,6 @@ saveRDS(progress_data, "progress_Q43.rds")
 ```r
 code_all_responses <- function(survey_data,
                                question_col = "Q43",
-                               prefix = "AI_Q1",
                                batch_size = 20,
                                save_every = 5,
                                output_file = "progress_Q43.rds",
@@ -135,8 +126,7 @@ code_all_responses <- function(survey_data,
     batch_codes <- tryCatch({
       code_batch(
         responses = batch_data$response_text,
-        response_ids = batch_data$response_id,
-        prefix = prefix
+        response_ids = batch_data$response_id
       )
     }, error = function(e) {
       cat("\n❌ ERROR in batch", batch_num, ":", e$message, "\n")
@@ -200,7 +190,6 @@ code_all_responses <- function(survey_data,
 q43_codes <- code_all_responses(
   survey_data = survey_data,
   question_col = "Q43",
-  prefix = "AI_Q1",
   batch_size = 20,
   save_every = 5,
   output_file = "progress_Q43.rds",
@@ -244,7 +233,7 @@ q43_codes <- code_all_responses(
   survey_data = survey_data,
   question_col = "Q43",
   output_file = "progress_Q43.rds",
-  resume = TRUE  # Key parameter
+  resume = TRUE  # Tells the function to start where you left off
 )
 ```
 
@@ -295,6 +284,7 @@ write_csv(survey_data, "survey_data_with_Q43_codes.csv")
 
 Create convenience wrappers:
 
+**These won't currently work -- we haven't implemented the prefix option into our batch functions**
 ```r
 # Q43 (Special Favors)
 code_Q43 <- function(survey_data) {
@@ -357,73 +347,6 @@ survey_data <- merge_codes_into_survey(survey_data, q49_codes)
 write_csv(survey_data, "survey_data_with_ALL_AI_codes.csv")
 ```
 
-## Inspecting Progress Files
-
-```r
-# Check what's in a progress file
-progress <- readRDS("progress_Q43.rds")
-
-cat(sprintf("Responses coded so far: %d\n", nrow(progress$codes)))
-cat(sprintf("Next batch to process: %d\n", progress$next_batch))
-
-# View the codes
-head(progress$codes)
-```
-
-## Advanced: Parallel Processing
-
-For even faster processing (if comfortable with parallel R):
-
-```r
-library(furrr)
-
-# Setup parallel processing
-plan(multisession, workers = 4)
-
-# Code all questions in parallel
-results <- future_map(
-  list(
-    list(col = "Q43", prefix = "AI_Q1"),
-    list(col = "Q45", prefix = "AI_Q2"),
-    list(col = "Q47", prefix = "AI_Q3"),
-    list(col = "Q49", prefix = "AI_Q4")
-  ),
-  function(q) {
-    code_all_responses(
-      survey_data,
-      question_col = q$col,
-      prefix = q$prefix,
-      output_file = sprintf("progress_%s.rds", q$col)
-    )
-  }
-)
-```
-
-{: .warning }
-> **Caution:** Parallel processing uses more API quota simultaneously. Monitor for rate limits!
-
-## Exercise: Code All Q43 Responses
-
-Let's do the full run:
-
-```r
-# Start coding
-q43_codes <- code_Q43(survey_data)
-
-# Monitor progress
-# - Watch the ETA
-# - Note any rate limit warnings
-# - Observe the periodic saves
-
-# When complete, merge
-survey_data <- merge_codes_into_survey(survey_data, q43_codes)
-
-# Quick check
-survey_data |>
-  select(Q43, AI_Q1individ, AI_Q1discrim, AI_Q1bexpment) |>
-  filter(!is.na(AI_Q1individ)) |>
-  head(10)
-```
 
 ## Troubleshooting
 
@@ -459,31 +382,4 @@ code_Q43(survey_data, resume = FALSE)
 
 You now have a production system that can code all your survey responses!
 
-In the [next section](validation.html), we'll compare Claude's codes with human coders to validate the approach.
-
----
-
-## Key Takeaways
-
-- 💾 **Save progress every 5 batches** for recoverability
-- 🔄 **Resume automatically** after errors or interruptions
-- 📊 **Track original row numbers** for merging
-- ⏱️ **ETA estimates** keep you informed
-- 🎯 **~10-15 minutes** per question with 1,800 responses
-- ✅ **Robust enough for production research**
-
-## Complete Workflow
-
-```r
-# 1. Code responses
-q43_codes <- code_Q43(survey_data)
-
-# 2. Merge into dataset
-survey_data <- merge_codes_into_survey(survey_data, q43_codes)
-
-# 3. Save
-write_csv(survey_data, "survey_with_AI_codes.csv")
-
-# 4. If interrupted, just run again - it resumes!
-q43_codes <- code_Q43(survey_data)  # Picks up where it left off
-```
+In the [next section](validation.html), we'll co

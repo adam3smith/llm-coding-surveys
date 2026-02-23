@@ -1,7 +1,7 @@
 ---
 layout: default
 title: "Validation & Comparison"
-nav_order: 8
+nav_order: 9
 ---
 
 # Validation & Comparison with Human Coders
@@ -51,10 +51,9 @@ This lets us calculate:
 ### Simple Percent Agreement
 
 ```r
-library(tidyverse)
 
-# Load data with codes
-survey_data <- read_csv("survey_data_with_Q43_codes.csv")
+# Load data with codes (skip if already merged)
+# survey_data <- read_csv("survey_data_with_Q43_codes.csv")
 
 # Calculate agreement for one variable
 calculate_agreement <- function(col1, col2, data) {
@@ -143,27 +142,17 @@ print(agreement_table)
 
 ### What's Good Agreement?
 
-| Agreement Rate | Interpretation |
-|---------------|----------------|
-| > 95% | Excellent |
-| 90-95% | Very good |
-| 85-90% | Good |
-| 80-85% | Acceptable |
-| < 80% | Problematic |
-
 ### Typical Patterns
 
 **Easy variables** (high agreement):
-- `code`, `welf`, `obama` → Binary, objective
+- `code`, `welf`, `obama`, `bexpment`, `wexpment` → Binary, objective
 - Agreement typically 95%+
 
 **Moderate variables** (medium agreement):
-- `individ`, `discrim` → Multi-category, some judgment
-- Agreement typically 85-90%
+- `individ`, `discrim`, `tblk` → Multi-category, some judgment
+- Agreement typically lower (see human coders!)
 
-**Hard variables** (lower agreement):
-- `tblk` → Subtle distinctions in tone
-- Agreement typically 80-85%
+
 
 ## Confusion Matrices
 
@@ -196,7 +185,7 @@ Prediction   0   1   2   3
 **Interpretation:**
 - Diagonal = agreements
 - Off-diagonal = where Claude/human disagree
-- Most disagreements on adjacent categories (1↔2, 2↔3)
+- Claude's coding is in the rows, the human (C1) coding in columns
 
 ## Identifying Problematic Responses
 
@@ -249,7 +238,7 @@ kappa_ai_c1 <- cohen.kappa(
 cat(sprintf("Cohen's kappa (AI-C1): %.3f\n", kappa_ai_c1$kappa))
 ```
 
-**Kappa interpretation:**
+**Common Kappa interpretation:**
 - > 0.80: Excellent
 - 0.60-0.80: Good
 - 0.40-0.60: Moderate
@@ -257,137 +246,8 @@ cat(sprintf("Cohen's kappa (AI-C1): %.3f\n", kappa_ai_c1$kappa))
 
 **Note:** Kappa is more stringent than percent agreement because it accounts for chance agreement.
 
-## Visualizing Agreement
-
-```r
-library(ggplot2)
-
-# Agreement rates by variable
-agreement_table |>
-  pivot_longer(cols = c(C1_C2, AI_C1, AI_C2), 
-               names_to = "comparison", 
-               values_to = "agreement") |>
-  ggplot(aes(x = variable, y = agreement, fill = comparison)) +
-  geom_col(position = "dodge") +
-  geom_hline(yintercept = 90, linetype = "dashed", color = "red") +
-  labs(
-    title = "Agreement Rates: Human vs AI Coders",
-    subtitle = "Dashed line = 90% threshold",
-    x = "Variable",
-    y = "Agreement (%)",
-    fill = "Comparison"
-  ) +
-  theme_minimal() +
-  coord_flip()
-```
-
-## When Can You Trust Claude?
-
-Based on validation, establish guidelines:
-
-### Use Claude Codes Directly When:
-✅ Agreement > 95% (e.g., `obama`, `welf`, `code`)  
-✅ Low-stakes analysis (exploratory)  
-✅ Large sample (errors average out)
-
-### Use with Caution When:
-⚠️ Agreement 85-90% (e.g., `individ`, `discrim`)  
-⚠️ Critical to your research question  
-⚠️ Small sample (errors compound)
-
-### Human Review Needed When:
-❌ Agreement < 85% (e.g., `tblk` if low)  
-❌ High-stakes decisions  
-❌ Legal/clinical applications
-
-## Hybrid Approach: AI + Human
-
-**Best practice:** Use Claude for initial coding, human review for uncertain cases:
-
-```r
-# Flag responses for human review
-survey_data <- survey_data |>
-  mutate(
-    needs_review = case_when(
-      AI_Q1code == 0 ~ TRUE,  # Not codeable
-      nchar(Q43) < 10 ~ TRUE,  # Very short
-      # Add rules for low-confidence cases
-      TRUE ~ FALSE
-    )
-  )
-
-# Responses needing human review
-review_set <- survey_data |>
-  filter(needs_review) |>
-  select(Q43, starts_with("AI_"))
-
-cat(sprintf("%d responses flagged for review (%.1f%%)\n", 
-            nrow(review_set), 
-            100 * nrow(review_set) / nrow(survey_data)))
-```
-
-## Exercise: Validate Your Q43 Codes
-
-```r
-# 1. Calculate agreement across all variables
-agreement <- compare_all_variables(survey_data)
-
-# 2. Find average agreement
-avg_human <- mean(agreement$C1_C2)
-avg_ai <- mean(c(agreement$AI_C1, agreement$AI_C2))
-
-cat(sprintf("Average human agreement: %.1f%%\n", avg_human))
-cat(sprintf("Average AI agreement: %.1f%%\n", avg_ai))
-
-# 3. Identify lowest-agreement variables
-agreement |>
-  arrange(AI_C1) |>
-  head(3)
-
-# 4. Examine problematic responses for those variables
-```
-
-## Writing It Up for Publication
-
-**In your methods section:**
-
-> "Open-ended survey responses were coded using Claude Haiku 4.5 (Anthropic, 2024) 
-> with a structured codebook prompt (temperature=0 for reproducibility). We validated 
-> the approach by comparing AI codes with double-coded human responses (n=1,823). 
-> Agreement between AI and human coders averaged 88.2% (range: 83.9-98.9% across 9 
-> variables), comparable to inter-rater reliability between human coders (89.1%). 
-> The highest agreement was on objective variables (code presence, explicit mentions), 
-> with lower but acceptable agreement on subjective judgments (trait attributions). 
-> All analyses used AI codes; robustness checks with human codes (n=200 randomly 
-> selected) yielded substantively identical results."
-
 ## What's Next?
 
 You've successfully validated your LLM coding approach!
 
 In the [final section](next-steps.html), we'll discuss how to extend this to other questions and applications beyond survey coding.
-
----
-
-## Key Takeaways
-
-- 📊 **88-94% agreement** is typical and comparable to human IRR
-- 🎯 **Simple variables** (mentions, binary) → 95%+ agreement
-- 🤔 **Complex variables** (traits, judgments) → 85-90% agreement
-- ⚠️ **Always validate** against human-coded subset
-- 📝 **Report transparently** in publications
-- 🔍 **Spot-check** problematic responses
-
-## Quick Reference
-
-```r
-# Compare all variables
-agreement <- compare_all_variables(survey_data)
-
-# Flag problematic responses
-problematic <- survey_data |>
-  filter(many_disagreements | very_short | ambiguous)
-
-# Hybrid approach: AI + human review
-review_these <- survey_data |> filter(needs_review)
-```

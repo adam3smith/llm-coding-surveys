@@ -1,7 +1,7 @@
 ---
 layout: default
 title: "Your First API Call"
-nav_order: 4
+nav_order: 5
 ---
 
 # Your First API Call
@@ -16,13 +16,6 @@ nav_order: 4
 
 ---
 
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
-
----
 
 ## Understanding the API
 
@@ -40,72 +33,50 @@ You → [Prompt] → Claude API → [Response] → You
 
 ## Choosing Your Model
 
-Anthropic offers several Claude models. Here's how to choose:
+Anthropic offers [several Claude models](https://platform.claude.com/docs/en/about-claude/pricing). Here's how to choose:
 
 | Model | Speed | Cost (per 1M tokens) | Best For |
 |-------|-------|---------------------|----------|
-| **Haiku 4.5** | Fastest | $0.25 in / $1.25 out | **← Use this one** |
-| Sonnet 4.5 | Medium | $3 in / $15 out | Complex reasoning |
-| Opus 4.5 | Slowest | $15 in / $75 out | Highest quality |
+| **Haiku 4.5** | Fastest | $1 in / $5 out | **← Use this one** |
+| Sonnet 4.6 | Medium | $3 in / $15 out | Complex reasoning |
+| Opus 4.6 | Slowest | $15 in / $75 out | Highest quality |
 
 ### Why We Use Haiku 4.5
 
-For survey coding, Haiku 4.5 is ideal because:
+For simple survey coding, Haiku 4.5 is ideal because:
 
-✅ **Fast:** ~2 seconds per batch  
-✅ **Cheap:** $2-3 for 1,944 responses  
-✅ **Accurate enough:** 90-95% agreement with humans  
-✅ **Large context:** 200K tokens (fits codebook + batches)
+**Fast:** ~2 seconds per batch  
+**Cheap:** $2-3 for 1,944 responses  
+**Accurate enough:** 90-95% agreement with humans  
+**Large context:** 200K tokens (fits codebook + batches)
 
 **When to consider alternatives:**
-- **Sonnet 4.5:** If Haiku's accuracy isn't sufficient (test first!)
-- **Opus 4.5:** Rarely needed for coding tasks
+- **Sonnet 4.6:** If Haiku's accuracy isn't sufficient (test first!)
+- **Opus 4.6:** Rarely needed for coding tasks
 - **GPT-4o-mini:** Comparable alternative from OpenAI
 
 ### Model Identifiers
 
 ```r
 # Model strings for API calls
-"claude-haiku-4-5-20251001"    # ← We'll use this
-"claude-sonnet-4-5-20250929"
-"claude-opus-4-5-20251101"
+"claude-haiku-4-5"    # ← We'll use this
+"claude-sonnet-4-6"
+"claude-opus-4-6"
 ```
-
-The date suffix indicates the release version.
 
 ## Temperature: The Consistency Knob
 
 Temperature controls randomness in model outputs:
 
 ```
-Temperature 0.0 ━━━●━━━━━━━━━━━━━━━━━ 2.0
+Temperature 0.0 ━━━●━━━━━━━━━━━━━━━━━ 1.0
               Deterministic      Creative
 ```
 
-**For research coding, always use `temperature = 0`:**
+The API default is 1. 
+**For deterministic coding, always use `temperature = 0`:**
 
-```r
-# ✅ Correct: Same response → same code
-temperature = 0
-
-# ❌ Wrong: Same response → different codes
-temperature = 1.0
-```
-
-**Why temperature=0?**
-- 🎯 **Reproducibility:** Essential for research
-- 📊 **Consistency:** Same input always gives same output
-- 🔬 **Comparable:** Can meaningfully compare with human coders
-
-**Other uses of temperature:**
-- `0.3-0.7`: Slight variation in outputs
-- `0.7-1.0`: Creative writing, brainstorming
-- `1.0+`: Maximum diversity
-
-{: .warning }
-> **Critical:** Without `temperature=0`, your codes won't be reproducible. A response coded today might be coded differently tomorrow.
-
-We tested this empirically: temperature 0 vs 1.0 gave ~94% vs ~91% consistency across runs. Small difference, but **always use 0 for research**.
+We tested this empirically: temperature 0 vs 1.0 gave ~94% vs ~91% consistency across runs. Small difference, but **always use 0 for deterministric tasks**.
 
 ## Building Our First Function
 
@@ -146,7 +117,7 @@ call_claude <- function(prompt,
     fromJSON()
   
   # Extract just the text
-  result$content[[1]]$text
+  result$content$text
 }
 ```
 
@@ -197,7 +168,9 @@ analysis <- call_claude(prompt)
 cat(analysis)
 ```
 
-**Claude's response:**
+Note the `sprintf` function here: it allows you to add a parameter -- `%s` -- into a string. This will be useful once we do this for multiple answers at once
+
+**Claude's response will be something like:**
 > This response is extremely brief and lacks context... appears to be an incomplete thought... 
 > Cannot be meaningfully coded without more information.
 
@@ -238,16 +211,12 @@ analysis <- call_claude(prompt, max_tokens = 500)
 cat(analysis)
 ```
 
-**Claude's analysis:**
-> 1. Blacks mentioned: No, not explicitly
-> 2. Whites mentioned: No, not explicitly
-> 3. Individualism: Strong affirmation - "we should all expect equality in the chances we are given"
-> 4. Special treatment: Opposed - explicit rejection of "special favors"
-> 5. Theme: Colorblind individualism - emphasizes equal treatment without acknowledging racial groups
+_What do you notice about Claude's analysis
+
 
 ## Batch Analysis
 
-Try analyzing multiple responses at once:
+Let's try analyzing multiple responses at once (w):
 
 ```r
 # Get 5 responses
@@ -298,9 +267,9 @@ The API returns JSON with this structure:
 ```
 
 **Key fields:**
-- `content[0].text`: The actual response
-- `usage.input_tokens`: How many tokens you sent
-- `usage.output_tokens`: How many tokens Claude generated
+- `content$text`: The actual response
+- `usage$input_tokens`: How many tokens you sent
+- `usage$output_tokens`: How many tokens Claude generated
 
 **Why this matters:**
 - You pay per token: ~$0.25 per 1M input, $1.25 per 1M output
@@ -343,7 +312,7 @@ cat(sprintf("Response: %s\n\nUsage: %d in, %d out\nCost: $%.4f\n",
             result$text, result$input_tokens, result$output_tokens, result$cost))
 ```
 
-## Exercise: Explore Different Responses
+## Some things you can try: Explore Different Responses
 
 Try these on your own:
 
@@ -366,20 +335,7 @@ obama_responses <- survey_data |>
 # How does Claude interpret these?
 ```
 
-**3. Compare very short vs. very long responses:**
-```r
-# Can Claude do anything useful with short responses?
-# Do long responses provide more nuance?
-```
-
-## Limitations of Exploratory Coding
-
-What we've done so far is **exploratory**—useful for understanding the data, but:
-
-❌ Not systematic  
-❌ Not reproducible  
-❌ Can't compare across coders  
-❌ No structured output for analysis
+What we've done so far is **exploratory**—useful for understanding the data, but not commonly a good use of LLMs (you should do this yourself! Get to know your data!)
 
 **Next step:** Use a formal codebook to get structured, consistent codes!
 
@@ -387,28 +343,3 @@ What we've done so far is **exploratory**—useful for understanding the data, b
 
 In the [next section](codebook.html), we'll use a detailed codebook to get structured JSON output that can be merged back into our dataset for analysis.
 
----
-
-## Key Takeaways
-
-- 🤖 Use **Claude Haiku 4.5** for survey coding (fast + cheap)
-- 🎯 Always set **temperature = 0** for reproducibility
-- 📊 Track **token usage** to estimate costs
-- 🔍 Exploratory analysis reveals themes
-- ➡️ But we need **structured coding** for systematic analysis
-
-## Quick Reference
-
-```r
-# Basic API call
-call_claude <- function(prompt, temperature = 0) {
-  # ... (function from above)
-}
-
-# With one response
-response <- call_claude("Analyze: 'text here'")
-
-# With multiple responses (batch)
-responses <- paste(survey_responses, collapse = "\n\n")
-analysis <- call_claude(sprintf("Analyze:\n%s", responses))
-```

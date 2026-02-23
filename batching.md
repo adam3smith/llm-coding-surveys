@@ -1,7 +1,7 @@
 ---
 layout: default
-title: "Efficient Batch Processing"
-nav_order: 6
+title: "Batching and Rate Limits"
+nav_order: 7
 ---
 
 # Efficient Batch Processing
@@ -11,50 +11,9 @@ nav_order: 6
 {: .no_toc }
 
 <div class="code-example" markdown="1">
-**Estimated time:** 25 minutes
+**Estimated time:** 15 minutes
 </div>
 
----
-
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
-
----
-
-## The Cost Problem
-
-If we code responses one-by-one:
-
-```r
-# Coding 1,944 responses individually
-for (i in 1:1944) {
-  code_one_response(responses[i])
-}
-```
-
-**Problems:**
-- 🐌 **Slow:** 1,944 API calls × 2 seconds = ~1 hour
-- 💸 **Expensive:** Codebook overhead repeated 1,944 times
-- 📊 **Wasteful:** ~800 tokens of codebook text × 1,944 = 1.5M tokens
-
-## The Batching Solution
-
-Instead, send multiple responses per call:
-
-```r
-# Coding in batches of 20
-for (batch in 1:98) {
-  code_batch_of_20(responses[batch_start:batch_end])
-}
-```
-
-**Benefits:**
-- ⚡ **Fast:** 98 API calls × 2 seconds = ~3 minutes
-- 💰 **Cheap:** Codebook overhead repeated only 98 times
-- 📉 **Efficient:** ~800 tokens × 98 = 78K tokens (20x reduction!)
 
 ## Understanding Token Costs
 
@@ -70,22 +29,22 @@ for (batch in 1:98) {
 ### Cost Calculation
 
 **Haiku 4.5 pricing:**
-- Input: $0.25 per 1M tokens
-- Output: $1.25 per 1M tokens
+- Input: $1 per 1M tokens
+- Output: $5 per 1M tokens
 
 **For one batch of 20:**
 ```
-Input:  1,800 tokens × $0.25/1M = $0.00045
-Output: 2,400 tokens × $1.25/1M = $0.00300
-Total per batch: $0.00345
+Input:  1,800 tokens × $1.00/1M = $0.0018
+Output: 2,400 tokens × $5/1M = $0.012
+Total per batch: $0.0138 (i.e. 1.4 cents)
 ```
 
 **For all 1,944 responses:**
 ```
-98 batches × $0.00345 = $0.34
+98 batches × $0.0138 = $1.35
 ```
 
-That's remarkably cheap!
+That's pretty cheap!
 
 ## Comparing Batch Sizes
 
@@ -123,14 +82,6 @@ Can Claude maintain quality with 50 items at once?
 
 **Recommendation:** Test empirically, but 20-25 is safe
 
-## The Sweet Spot: Batch Size 20
-
-**Why 20 is ideal:**
-- ✅ 73% cost savings vs. batch=5
-- ✅ Manageable error recovery
-- ✅ Provably good quality (we tested this!)
-- ✅ Well under context limits
-- ✅ Fast enough for interactive work
 
 ## Implementing Efficient Batching
 
@@ -147,11 +98,13 @@ code_all_responses_batched <- function(survey_data,
     mutate(response_id = row_number())
   
   total_responses <- nrow(responses_df)
+  # Calculate the number of batches
   n_batches <- ceiling(total_responses / batch_size)
   
   cat(sprintf("Coding %d responses in %d batches of ~%d\n", 
               total_responses, n_batches, batch_size))
   
+  # Create an empty tibble
   all_codes <- tibble()
   
   # Process each batch
@@ -193,9 +146,15 @@ Even with batching, you might hit rate limits.
 ### Understanding Rate Limits
 
 **Tier 1 limits (typical starting tier):**
-- ✅ 50 requests per minute
-- ⚠️ 50,000 INPUT tokens per minute
-- ⚠️ 50,000 OUTPUT tokens per minute
+- 50 requests per minute
+- ⚠️ ~50,000 INPUT tokens per minute
+- ⚠️ ~10,000 OUTPUT tokens per minute
+
+The API key for our workshop has Tier 2 limits, i.e.
+
+- 1,000 requests per minute
+- 450,000 INPUT tokens per minute
+- 90k OUTPUT tokens per minute
 
 ### The Token Problem
 
@@ -217,16 +176,6 @@ for (batch_num in 1:n_batches) {
     Sys.sleep(5)  # ~12 requests/min = ~50K TPM
   }
 }
-```
-
-### Alternative: Reduce Batch Size
-
-```r
-# Smaller batches = fewer tokens per request
-code_all_responses_batched(survey_data, batch_size = 15)
-
-# 15 responses = ~3,600 tokens
-# At 12 req/min: ~43K TPM ✓
 ```
 
 ## Handling Rate Limit Errors
@@ -289,118 +238,19 @@ cat(sprintf("Estimated time: %.1f minutes\n", total_time))
 # Output: ~11 minutes
 ```
 
-**Not bad** for coding 1,944 responses!
 
-## Cost-Time Tradeoff
-
-| Batch Size | Cost | Time | Notes |
-|------------|------|------|-------|
-| 10 | $0.34 | ~16 min | Safest for rate limits |
-| 15 | $0.22 | ~13 min | Good balance |
-| **20** | **$0.18** | **~11 min** | **Recommended** |
-| 25 | $0.15 | ~9 min | Occasional rate limits |
-| 30 | $0.13 | ~7.5 min | Frequent rate limits |
-
-**Recommendation:** Start with 20, adjust if needed.
-
-## Exercise: Test Different Batch Sizes
-
-Try coding 100 responses with different batch sizes:
+Let's try coding 100 responses with different batch sizes:
 
 ```r
 test_data <- survey_data |>
   filter(!is.na(Q43), Q43 != "") |>
   slice(1:100)
 
-# Test batch size 10
-system.time({
-  codes_10 <- code_all_responses_batched(test_data, batch_size = 10)
-})
-
-# Test batch size 20
-system.time({
-  codes_20 <- code_all_responses_batched(test_data, batch_size = 20)
-})
-
-# Compare results
-identical(codes_10, codes_20)  # Should be TRUE (same codes)
+codes_100 <- code_all_responses_batched(test_data, batch_size = 20)
 ```
-
-**Observe:**
-- Time difference
-- Any rate limit warnings?
-- Cost difference (track token usage)
-
-## Monitoring Your Usage
-
-Check your actual usage:
-
-```r
-# Track tokens across batches
-total_input <- 0
-total_output <- 0
-
-for (batch_num in 1:n_batches) {
-  result <- call_claude_with_usage(prompt)
-  
-  total_input <- total_input + result$input_tokens
-  total_output <- total_output + result$output_tokens
-  
-  cat(sprintf("Batch %d: %d in, %d out\n", 
-              batch_num, result$input_tokens, result$output_tokens))
-}
-
-cat(sprintf("\nTotal: %d input, %d output\n", total_input, total_output))
-cat(sprintf("Cost: $%.4f\n", 
-            (total_input / 1e6 * 0.25) + (total_output / 1e6 * 1.25)))
-```
-
-## Best Practices
-
-**Do:**
-- ✅ Use batch_size=20 as default
-- ✅ Add 5-second delays between batches
-- ✅ Implement retry logic for 429 errors
-- ✅ Track token usage to monitor costs
-- ✅ Test on small subset first
-
-**Don't:**
-- ❌ Process one-by-one (wasteful)
-- ❌ Use batch_size > 40 (risky)
-- ❌ Ignore rate limit errors
-- ❌ Forget delays between batches
-- ❌ Process all data without testing first
 
 ## What's Next?
 
 We can now efficiently code large datasets! But what if something goes wrong mid-process?
 
-In the [next section](production.html), we'll add progress saving and error recovery to create a production-ready system.
-
----
-
-## Key Takeaways
-
-- 📦 **Batch size 20** is the sweet spot (cost + reliability)
-- 💰 **Cost scales with overhead:** Batching reduces by ~70%
-- ⏱️ **Token limits** are usually the constraint, not requests
-- ⚠️ **Add delays:** 5 seconds between batches prevents rate limits
-- 🔄 **Retry logic:** Handle 429 errors automatically
-- 📊 **~$0.18 + 11 minutes** for 1,944 responses
-
-## Quick Reference
-
-```r
-# Optimal settings
-batch_size <- 20
-delay_seconds <- 5
-
-# Process with retry
-for (batch in batches) {
-  codes <- call_claude_with_retry(prompt)
-  Sys.sleep(delay_seconds)
-}
-
-# Estimate cost
-cost <- (n_batches × 4200 tokens) × $1.50 / 1M tokens
-```
+In the [next section](production.html), we'll add progress saving and error recovery to create a robust system.

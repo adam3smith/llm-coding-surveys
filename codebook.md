@@ -1,7 +1,7 @@
 ---
 layout: default
 title: "Structured Coding with a Codebook"
-nav_order: 5
+nav_order: 6
 ---
 
 # Structured Coding with a Codebook
@@ -11,16 +11,8 @@ nav_order: 5
 {: .no_toc }
 
 <div class="code-example" markdown="1">
-**Estimated time:** 30 minutes
+**Estimated time:** 35 minutes
 </div>
-
----
-
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
 
 ---
 
@@ -29,7 +21,7 @@ nav_order: 5
 Our exploratory approach was useful, but had major limitations:
 
 ```r
-# What we got:
+# What we got was something like:
 "This response shows opposition to special treatment..."
 
 # What we need:
@@ -42,14 +34,14 @@ Our exploratory approach was useful, but had major limitations:
 ```
 
 For systematic analysis, we need:
-- ✅ **Consistent format** across all responses
-- ✅ **Numeric codes** for statistical analysis
-- ✅ **Multiple variables** coded simultaneously
-- ✅ **Merge-able** back into our dataset
+- **Consistent format** across all responses
+- **Numeric codes** for statistical analysis
+- **Multiple variables** coded simultaneously
+- **Merge-able** back into our dataset
 
 ## Introducing the Codebook
 
-Our codebook has **9 variables** for coding each response:
+Our [codebook](/resources/Appendix.pdf) has **9 variables** for coding each response:
 
 ### 1. **code** (Codeable content?)
 - `0` = No (blank, "don't know", one-word answers)
@@ -108,7 +100,7 @@ Here's how we embed the codebook in our prompt:
 create_codebook_prompt <- function(responses, response_ids) {
   
   codebook <- '
-CODEBOOK FOR Q43 (Special Favors Question):
+CODEBOOK FOR RACIAL RESENTMENT QUESTIONS:
 
 For each response, assign codes for the following variables:
 
@@ -211,11 +203,7 @@ Return ONLY the JSON, no other text.',
 The key is being explicit about format:
 
 ```r
-# ✅ Good: Specific format request
 "Return your results as valid JSON in exactly this format: {...}"
-
-# ❌ Vague: Will get free-form text
-"Please code these responses."
 ```
 
 **Critical elements:**
@@ -228,13 +216,6 @@ The key is being explicit about format:
 Let's code 10 responses:
 
 ```r
-library(tidyverse)
-library(httr2)
-library(jsonlite)
-
-# Load data
-survey_data <- read_csv("data/Kam_Burge.csv")
-
 # Get 10 non-empty responses
 test_responses <- survey_data |>
   filter(!is.na(Q43), Q43 != "") |>
@@ -270,7 +251,7 @@ cat(result)
 
 ## Parsing the JSON Response
 
-Claude might wrap JSON in markdown code blocks. Clean it first:
+Claude might wrap JSON in markdown code blocks. (````json` Clean it first, then create new variables following the same pattern as the human coded ones.
 
 ```r
 parse_coding_response <- function(claude_response) {
@@ -284,7 +265,7 @@ parse_coding_response <- function(claude_response) {
   # Parse JSON
   parsed <- fromJSON(cleaned, simplifyVector = FALSE)
   
-  # Convert to dataframe
+  # Convert to tibble
   codes_df <- map_dfr(parsed$codes, function(item) {
     tibble(
       response_id = item$id,
@@ -328,10 +309,7 @@ coded_with_text <- test_responses |>
   select(response_id, Q43) |>
   left_join(coded_data, by = "response_id")
 
-# View first few
-coded_with_text |>
-  select(response_id, Q43, AI_Q1individ, AI_Q1discrim, AI_Q1bexpment) |>
-  head(3)
+
 ```
 
 **Example output:**
@@ -341,6 +319,8 @@ coded_with_text |>
 2           2 we are all struggling to be consider...           1            2
 3           3 alot of black people have worked th...            1            0
 ```
+
+Look 
 
 ## Complete Workflow Function
 
@@ -375,78 +355,6 @@ codes <- code_batch(
 )
 ```
 
-## Understanding the Results
-
-Let's examine what Claude coded:
-
-```r
-# Distribution of codes
-cat("Codeable responses:\n")
-table(codes$AI_Q1code)
-
-cat("\nBlacks mentioned:\n")
-table(codes$AI_Q1bexpment)
-
-cat("\nIndividualism codes:\n")
-table(codes$AI_Q1individ)
-
-cat("\nDiscrimination codes:\n")
-table(codes$AI_Q1discrim)
-```
-
-## Spot-Checking Quality
-
-Always verify a sample manually:
-
-```r
-# Look at a few coded responses
-for (i in 1:3) {
-  cat(strrep("=", 60), "\n")
-  cat(sprintf("Response %d:\n", i))
-  cat(sprintf('"%s"\n\n', test_responses$Q43[i]))
-  
-  cat("Codes:\n")
-  cat(sprintf("  individ: %d\n", codes$AI_Q1individ[i]))
-  cat(sprintf("  discrim: %d\n", codes$AI_Q1discrim[i]))
-  cat(sprintf("  bexpment: %d\n", codes$AI_Q1bexpment[i]))
-  cat("\n")
-}
-```
-
-**Ask yourself:**
-- Does the `individ` code make sense?
-- Did it correctly identify racial group mentions?
-- Are the codes consistent with the codebook?
-
-## Exercise: Code 50 Responses
-
-Try coding a larger batch:
-
-```r
-# Get 50 responses
-test_50 <- survey_data |>
-  filter(!is.na(Q43), Q43 != "") |>
-  slice(1:50)
-
-# Code them
-codes_50 <- code_batch(
-  responses = test_50$Q43,
-  response_ids = 1:50
-)
-
-# Examine distributions
-summary(codes_50)
-
-# Look for patterns
-codes_50 |>
-  count(AI_Q1individ, AI_Q1discrim) |>
-  arrange(desc(n))
-```
-
-**Questions to explore:**
-1. What's the most common combination of codes?
-2. How many responses explicitly mention both blacks and whites?
-3. Which responses did Claude mark as not codeable (code=0)?
 
 ## Common Issues
 
@@ -486,53 +394,18 @@ names(fromJSON(result)$codes[[1]])
 # Should be: id, code, bexpment, wexpment, etc.
 ```
 
-## Comparing with Human Codes
-
-Our data includes human coders (C1Q1*, C2Q1*). Let's compare:
-
-```r
-# Merge with survey data
-comparison <- survey_data |>
-  filter(!is.na(Q43), Q43 != "") |>
-  slice(1:10) |>
-  mutate(response_id = row_number()) |>
-  left_join(codes, by = "response_id")
-
-# Calculate agreement
-agreement_individ <- mean(
-  comparison$AI_Q1individ == comparison$C1Q1individ,
-  na.rm = TRUE
-)
-
-cat(sprintf("Agreement on 'individ': %.1f%%\n", agreement_individ * 100))
-```
-
-We'll do comprehensive validation in the [Validation section](validation.html).
-
 ## What's Next?
 
-We can now code responses systematically! But doing all 1,944 one-by-one would be slow and expensive.
+We can now code responses systematically!
 
-In the [next section](batching.html), we'll learn how to batch multiple responses per API call to maximize efficiency.
+In the [next section](batching.html), we'll learn how to batch multiple responses per API call and cycle through the whole survey.
 
----
 
-## Key Takeaways
 
-- 📋 **Codebook in prompt** ensures consistent interpretation
-- 📊 **JSON output** enables structured analysis
-- 🔢 **Numeric codes** are ready for statistical tests
-- ✅ **Parse carefully** to handle markdown wrappers
-- 🎯 **Spot-check** to verify quality
-- 📏 Use `length(responses) * 120` to estimate `max_tokens`
-
-## Complete Code
+## Complete Code So far
 
 ```r
 # Complete workflow
-library(tidyverse)
-library(httr2)
-library(jsonlite)
 
 # 1. Create codebook prompt
 prompt <- create_codebook_prompt(responses, ids)
