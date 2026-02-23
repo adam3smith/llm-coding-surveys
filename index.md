@@ -13,13 +13,6 @@ nav_order: 1
 
 ---
 
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
-
----
 
 ## What You'll Build
 
@@ -66,13 +59,13 @@ All materials are available for download:
 | 0:00 | Setup & Introduction | 15 min |
 | 0:15 | Motivation: Why LLMs for Survey Coding? | 10 min |
 | 0:25 | Your First API Call | 20 min |
-| 0:45 | Structured Coding with a Codebook | 30 min |
-| 1:15 | Efficient Batch Processing | 25 min |
-| 1:40 | Break | 10 min |
-| 1:50 | Building a Production System | 30 min |
-| 2:20 | Validation & Comparison with Human Coders | 15 min |
-| 2:35 | Next Steps & Discussion | 10 min |
-| 2:45 | Q&A Buffer | 15 min |
+| 0:45 | Structured Coding with a Codebook | 35 min |
+| 1:20 | Efficient Batch Processing | 25 min |
+| 1:45 | Break | 5 min |
+| 1:50 | Building a Production System | 20 min |
+| 2:10 | Validation & Comparison with Human Coders | 25 min |
+| 2:35 | Next Steps | 10 min |
+| 2:45 | Q&A  | 15 min |
 
 ## Learning Objectives
 
